@@ -1,15 +1,13 @@
 package user
 
 import (
-	"errors"
+	"github.com/Rajshah1103/event-booking-api/internal/db"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
-var users = []User{}
-var nextID = 1
-
-// Register a user 
-func Register(username, password string) (User , error) {
+// Register a user
+func Register(username, password string) (User, error) {
 	// hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -17,13 +15,24 @@ func Register(username, password string) (User , error) {
 	}
 
 	// create user
-	u := User {
-		ID : nextID,
+	u := User{
 		Username: username,
 		Password: string(hashedPassword),
 	}
-	nextID++
-	users = append(users, u)
 
+	if err := db.DB.Create(&u).Error; err != nil {
+		return User{}, err
+	}
 	return u, nil
-} 
+}
+
+func AuthenticateUser(username, password string) (User, error) {
+	var u User
+	if err := db.DB.Where("username = ?", username).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return User{}, err
+		}
+		return User{}, err
+	}
+	return u, nil
+}
