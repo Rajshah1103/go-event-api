@@ -6,6 +6,7 @@ import (
 	"github.com/Rajshah1103/event-booking-api/internal/booking"
 	"github.com/Rajshah1103/event-booking-api/internal/db"
 	"github.com/Rajshah1103/event-booking-api/internal/event"
+	"github.com/Rajshah1103/event-booking-api/internal/kafka"
 	"github.com/Rajshah1103/event-booking-api/internal/user"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -36,12 +37,14 @@ func main() {
 	})
 
 	// Events api
-	r.POST("/events", event.CreateEventHandler)
-	r.GET("/events", event.GetAllEventsHandler)
+	r.POST("/events", user.JWTAuthMiddleware(), event.CreateEventHandler)
+	r.GET("/events", user.JWTAuthMiddleware(), event.GetAllEventsHandler)
 
 	//Booking api
 	r.POST("/bookings", user.JWTAuthMiddleware(), booking.CreateBookingHandler)
 	r.GET("/bookings", user.JWTAuthMiddleware(), booking.GetBookingsHandler)
+
+	go kafka.StartBookingConsumer("localhost:9092", "booking-created", "booking-group-1")
 
 	// start the server
 	r.Run(":8080") // listens on port 80

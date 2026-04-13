@@ -23,7 +23,7 @@ func RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not register user"})
 		return
 	}
-	token, err := GenerateJWT(u.Username)
+	token, err := GenerateJWT(u)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
 		return
@@ -47,5 +47,10 @@ func LoginHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"id": u.ID, "username": u.Username})
+	token, err := GenerateJWT(u)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"id": u.ID, "username": u.Username, "token": token})
 }

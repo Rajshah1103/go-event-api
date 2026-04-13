@@ -8,17 +8,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// middleware function
+// middleware function for jwt retrieval and validation
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// get authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
 		}
-		// split the Bearer <token> and check
+
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
@@ -28,8 +27,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		tokenStr := parts[1]
 
-		// parse token
-		claims := &Claims{}
+		claims := &Claims{} // Claims struct includes ID, Username, Role
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
 		})
@@ -39,7 +37,27 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("username", claims.Username)
+		// Store the full claims in Gin context
+		c.Set("claims", claims)
 		c.Next()
+	}
+}
+
+func AdminMiddleWare() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claimsInfo, exists := c.Get("claims")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Claims not found"})
+			c.Abort()
+			return
+		}
+		claims := claimsInfo.(*Claims)
+		if claims.Role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.Abort()
+			return
+		}
+		c.Next()
+
 	}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func CreateBookingHandler(c *gin.Context) {
-	claims := c.MustGet("claims").(user.Claims) // JWT middleware
+	claims := c.MustGet("claims").(*user.Claims) // JWT middleware
 
 	var input struct {
 		EventID uint `json:"event_id" binding:"required"`
@@ -31,7 +31,7 @@ func CreateBookingHandler(c *gin.Context) {
 }
 
 func GetBookingsHandler(c *gin.Context) {
-	claims := c.MustGet("claims").(user.Claims) // JWT middleware
+	claims := c.MustGet("claims").(*user.Claims) // JWT middleware
 	bookings, err := GetBookingByUserId(claims.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
